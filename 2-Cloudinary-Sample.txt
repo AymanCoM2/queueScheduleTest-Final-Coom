@@ -1,0 +1,66 @@
+<?php
+
+namespace App\Livewire;
+
+use App\Rules\Uniqueemail;
+use App\Rules\Uniquelabel;
+use Cloudinary\Configuration\Configuration;
+use Cloudinary\Api\Upload\UploadApi;
+use App\Models\User;
+use Livewire\Attributes\Rule;
+use Livewire\Component;
+use Livewire\WithFileUploads;
+
+class Profileeditmodal extends Component
+{
+    use WithFileUploads;
+    #[Rule('required|min:3|max:250')]
+    public $userName;
+    public $userImage;
+    #[Rule(['required', 'min:3', 'max:300', new Uniquelabel])]
+    public $userLabel;
+    #[Rule(['required', 'email', 'max:250', new Uniqueemail])]
+    public $userEmail;
+    #[Rule('image|nullable')] // 1MB Max
+    public $userProfileImage;
+
+    public function updateProfileData()
+    {
+        // Exceptions in Code "Like Cloudinary Uploading" & abort(404)
+        // What If Something Error Or a Network Issue ? 
+        $this->validate(); // ^ This is to Run the rules above each field
+        $resultArray  = null;
+        if ($this->userProfileImage) {
+            try {
+                // cURL error 6: Could not resolve host: api.cloudinary.com
+                Configuration::instance([
+                    'cloud' => [
+                        'cloud_name' => 'dj0x80lsi',
+                        'api_key' => '511596894376763',
+                        'api_secret' => 'KJVaUOXqoSxhkhQWMtjj98wnT8U'
+                    ],
+                    'url' => [
+                        'secure' => true
+                    ]
+                ]);
+                $resultArray  = (new UploadApi())->upload($this->userProfileImage->getRealPath(), $options = []);
+            } catch (\Throwable $th) {
+                // TODO try this By Uploading Image While Offline 
+                $this->dispatch('uploading-image-error');
+            }
+        }
+        $user = User::find(request()->user()->id); //^ Getting the User model From thr DB ;
+        $user->name  = $this->userName;
+        $user->email = $this->userEmail;
+        $user->label = $this->userLabel;
+        if ($resultArray) {
+            $oldUploadLink  =  $resultArray['url'];
+            $newReplacement  = "upload/w_200,h_100,c_fill/";
+            // newReplacement is For the Image Resize 
+            $newUrl  = str_replace("upload/", $newReplacement, $oldUploadLink);
+            $user->image = $newUrl;
+        }
+        $user->save();
+        $this->dispatch('profile-updated');
+    }
+}

@@ -1,0 +1,19 @@
+1- Making Command [$ php artisan make:command DoBackup ]
+$ php artisan app:do-backup
+=============================
+2- Make this Command Make the BackUP 
+// DONE 
+=============================
+2.1- Sending Mail  
+$ php artisan make:mail ExcelFile   -> To Make Mailable Object 
+=============================
+2.2- Attaching the FILE 
+# Done Also 
+===================================
+3- Put the Command To be Scheduled in Kernel File inside Console Folder 
+3- Then Schedule this Command
+# php artisan schedule:run   >> Will Run Only One Time and Terminal Stops 
+    ## The Above One  Needs CRON from the Server 
+
+# php artisan schedule:work   >> Better For Local Stuff While Keeping Terminal Open 
+================================================
